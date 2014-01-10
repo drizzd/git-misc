@@ -1,12 +1,15 @@
 Rewriting checkout as a 3-way merge
 ===================================
 
-Motivation: Much of the complexity in merge algorithms such as threeway_merge
-is due to the fact that the merge algorithm is responsible for dealing with a
-dirty index, dirty work tree and untracked files. This is a lot to deal with at
-the same time, and it does not work properly, as evidenced by a longstanding
-bug which can cause untracked files to be overwritten during a merge. Please
-see t7607-merge-overwrite.sh for a demonstration.
+Motivation
+----------
+
+Much of the complexity in merge algorithms such as threeway_merge is due to the
+fact that the merge algorithm is responsible for dealing with a dirty index,
+dirty work tree and untracked files. This is a lot to deal with at the same
+time, and it does not work properly, as evidenced by a longstanding bug which
+can cause untracked files to be overwritten during a merge. Please see
+t7607-merge-overwrite.sh for a demonstration.
 
 Furthermore, the rules of how Git is supposed to behave in case of merges
 involving various scenarios with dirty or untracked files are complicated.
@@ -14,25 +17,30 @@ There is a list of rules in the manual of git-read-tree in the Section "Two
 Tree Merge", but the reasoning behind those rules is not self-evident. Neither
 is the code.
 
-Idea: 
 
-Separate the problem into multiple distinct steps:
+Proposed fix
+------------
+
+In order to resolve this, the idea is to separate a Git merge into several
+distinct steps:
 
 1. Tree merge. Do not consider index or work tree, only two commits, and their
    history. A simple example is a three-way tree merge with a base tree and two
    head trees. A more complex example is recursive merge. A trivial example is
-   checkout, which simply returns a given tree. This is the only step that may
-   consider file contents, for example for merging content and rename
-   detection.
+   checkout <tree-ish>, which simply returns a given tree. This is the only
+   step that may consider file contents, for example for merging content and
+   rename detection.
 
 2. Merge the tree merge result with the current index, using the HEAD commit as
    the base tree. Do not consider work tree or any internals from the tree
-   merge. This is independent from the tree merge and should not try to be as
+   merge. This is independent from the tree merge and should not try to be
    smart. In particular, it must not consider file contents, merge helpers or
    rename detection. The merge must be trivial, based only on the object ids.
-   If any conflicts arise, abort, leaving index and work tree untouched. If the
-   merge succeeds, the resulting index is kept separately from the current
-   index until it gets swapped in during step 3.
+   An entry with conflict markers from step 1 is always in conflict with
+   modifications in the current index, even if the object ids match (however
+   unlikely that might be). If any conflicts arise, abort, leaving index and
+   work tree untouched. If the merge succeeds, the resulting index is kept
+   separately from the current index until it gets swapped in during step 3.
 
 3. Checkout the resulting index. This is again to be considered as a three-way
    merge between the work tree and the resulting index, with the current index
@@ -45,17 +53,18 @@ Separate the problem into multiple distinct steps:
 
 4. Create a merge commit with the new index state.
 
+
 Issues
 ------
 
-- When traversing trees we have to consider that the ordering is based on the
-  full path name of entries. In particular, file and directory entries of the
-  same name do not necessarily appear in the same place in otherwise equal
-  trees. Consider for example the sorted index entries (foo, foo-) and (foo-,
-  foo/bar). In the first case, foo is a file and with strcmp ordering comes
-  before foo-. In the second case, foo is a directory and with strcmp ordering
-  foo- comes before foo/, because the ASCII codes for - and / are 0x2d, 0x2f,
-  respectively.
+* Directory/file conflicts: When traversing trees we have to consider that the
+  ordering is based on the full path name of entries. In particular, file and
+  directory entries of the same name do not necessarily appear in the same
+  place in otherwise equal trees. Consider for example the sorted index entries
+  (foo, foo-) and (foo-, foo/bar). In the first case, foo is a file and with
+  strcmp ordering comes before foo-. In the second case, foo is a directory and
+  with strcmp ordering foo- comes before foo/, because the ASCII codes for -
+  and / are 0x2d, 0x2f, respectively.
 
-- How should we treat special index entry flags, such as the assume-unchanged
+* How should we treat special index entry flags, such as the assume-unchanged
   flag?
