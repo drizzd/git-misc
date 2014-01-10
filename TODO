@@ -1,0 +1,344 @@
+=== important ===
+
+- use sparse checkout for files with illegal filenames
+
+- verify: dumb http cred fix
+
+- --mirror/--delete should require --force
+- git push --all should not give advice_use_upstream.
+- behavior of git push --all with push.default = upstream?
+
+=== new ===
+
+- making the current working directory invalid by remounting or moving
+  directories.
+
+- git branch -a -v --no-merged also shows merged branches
+
+- git push with missing permissions does not seem to give very useful error
+  messages.
+
+- git-gui ctrl-u
+
+- git-gui complaining if spell checker missing
+
+- push reject early
+
+  + receive-pack fsck can be disabled
+  + but rev-list --verify-objects runs anyways and results are ignored
+
+- libgit index transactions
+  -> used for trivial read-tree "merges" (e.g. --prefix)
+
+- upstream cb/rebase-fix
+
+- get push --quiet into git.git
+
+- get git-daemon tests into git.git
+
+- prototype resumeable fetch
+
+- prototype subtree "clone"
+  + start with ejecting unneeded objects locally
+
+- fsck: do not report dangling objects
+
+- test error message for git clone git://xxx
+- error message does not work for clone http://xxx
+- fix git clone file://doesnotexist
+
+- refactor verify_absent, check_path (around lstat_cache)
+
+- replace match_pathspec with match_pathspec_depth
+
+- git for-each-ref --sort='*committerdate' funktioniert nicht, aber
+  git for-each-ref --sort='committerdate' schon
+
+- fix large file handling speed?
+
+- fix file globbing
+
+- implement tortoisegit style decorations in git-cheetah
+
+- "GIT_PAGER=lkajsdf git log" does not report an error
+  -> execvp error reporting does not work, because pager_preexec disables it.
+     (pager_prexec would be waiting for input while child_notify is still
+     open, so the parent is waiting for the child -> deadlock)
+  -> finish_command finds the error but cannot report it, because all output
+     goes to the pager?
+
+- checkout -p <file> calls update-index --refresh (presumably on all files),
+  which is very slow
+
+- git fetch --tags, git config remote.<name>.tagopt = --tags
+
+ Unexpected behavior: does not fetch branch heads.
+
+- 'cannot apply because does not exist in index' warning when using checkout
+  <whatever> -p on an unmerged path
+
+- git remote rename should rename alternates?
+
+=== cooking ===
+
+- killign - do not overwrite ignored files
+
+ Write tests.
+
+- document michael's --no-cherry patch?
+
+- fix checkout dir overrides untracked file
+  -> fixed?
+  -> refactor verify_absent, lstat_cache()
+     -> implement check_path (lstat) + check_ok_to_remove (re-using lstat from
+        check_path)
+
+- "merge would overwrite untracked file"
+
+ Is this check really necessary? The merge would not actually do anything in
+ the end.
+
+- demonstrate frontend to in-index merge algorithm in libgit2
+
+- tag --contains hangs (actually it's just really slow, because of the many
+  tags from the staging tree)
+  -> possibly fixed by peff's generation numbers
+
+$ cd ~/src/linux; git tag --contains 9f888160bdccc
+
+- warn that local clone mechanism does not support --depth 1
+
+- debug update-index and crlf stuff changes
+
+- git mv submodule
+
+- document git checkout <remote-branch>
+
+- git fetch timeout?
+
+- supdirectories support for (clean|ls-tree|archive)
+
+- git cat-file --batch-check reports empty tree as "missing"
+
+- clean -q should report permission problems
+
+- git grep should ignore files not present due to sparse-checkout?
+
+- diffit (like git-gui but in vi)
+
+See also "git diff mode" discussed on the list (according to Ilari on #git)
+
+- git archive regression
+
+Commit 782a000 (Fix archive format with -- on the command line)
+possibly makes pre-1.7.0 clients incompatible with post-1.7.0 servers.
+
+=== pending ===
+
+- if index-pack is interrupted, it may leave around a objects/pack/tmp_pack*
+  file
+
+git gc should remove it; test expiration
+
+=== suspended ===
+
+- file moved in two branches, --follow from merge only follows one
+
+- git branch -d considered dangerous (if upstream branch is removed)
+
+- branch graveyard
+
+ + *~ illegal branch name?
+ + *~ portable directory name?
+ + old git does not resurrect reflogs, what to do with buried reflog if the
+   branch is deleted again?
+ + fsck: do not check graveyard?
+
+- locking
+
+see also git-blacklist as a reference
+
+ * on central server
+
+locks a specific <path> (possibly only on a specific branch)
+
+command to retrieve and release locks (needs to be enabled)
+
+check locks on push and relase after successful push from lock owner
+
+ * on client
+
+command to retrieve and release locks (git unlock)
+
+check if current branch tracks a remote branch and use that by default
+check if current index is up-to-date with locked <branch>:<path>
+release locks after successful push
+
+- git branch -t <local-branch> works, but git checkout -t <local-branch> does
+  not
+
+- pathspec_matches() vs. match_pathspec()
+
+- git fetch
+
+fetches from tracking remote by default
+
+- git status <dir>/<path>
+
+doesn't match documented behavior ("commit...")
+
+- complain about -C being misleading instead of useful
+
+- git archive
+
+ drizzd@darc:~/linux/src$ git archive --remote=git://git.kernel.org/pub/scm/git/git.git master git.c  
+ fatal: The remote end hung up unexpectedly
+
+If not supported by remote, maybe we can improve the error message?
+
+- debian git bugs
+
+http://bugs.debian.org/cgi-bin/pkgreport.cgi?ordering=normal;archive=0;src=git-c
++ore;dist=unstable;repeatmerged=0
+
+http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=544380
+
+- gitk does not handle failed checkout due to dirty work tree
+
+ -> possibly also an issue with git-gui?
+
+- git-gui staging error if core.autocrlf = input
+
+ git init
+ echo '\015' > file
+ git gui
+ -> stage file
+ => gives an error (but works)
+ probably because "git update-index" gives a warning
+ return status is not checked?
+
+- rewrite recursive merge to
+
+ o handle "modify/delete conflict resolution overwrites untracked"
+ o ignore worktree
+ o handle recursive "move/move", "move/delete", "add/modify" etc. conflicts
+ o handle D/F conflicts
+
+- git checkout -t bdl/master; sed -i 's#bdl/master#origin/master#' .git/config;
+  git push does not push master to origin/master because git thinks it's
+  already up to date?
+
+- rename and heavy edit in topic branch
+
+ how to aid rename detection automatically?
+
+- shared g+s
+
+ Git seems to set the setgid bit on the root directory too late. Some files are
+ created with the user's default group instead of the group of the root
+ directory.
+
+- case insensitive filesystems support
+
+ complain about collisions
+
+- if a bundle is cloned, I get
+
+ warning: remote HEAD refers to nonexistent ref, unable to checkout.
+
+ and no master branch is created.
+
+- fix add wildcard (see t3414)
+
+ + use builtin-grep's pathspec matching
+ + return no exact matches for globbing pattern
+ + Junio: do not apply globbing to implicitly added paths
+  -> where does that happen?
+
+- fix rename-df (see t3413)
+- fix t7607 (merge should fail IMO)
+- what's this?
+
+ drizzd@darc:~/tmp/test-df$ git reset --hard
+ error: 'file' appears as both a file and as a directory
+ error: file: cannot drop to stage #0
+
+- replace pretend_sha1_file(NULL, 0, OBJ_TREE, sha1) with cache.h's
+  EMPTY_TREE_SHA1_(HEX/BIN)
+- 'git push' should update remote refs even if everything is already up-to-date
+  noticed by Cousin It
+- fix 'git-view', not everything is connected as it should be (compare with
+  gitk)
+
+ git log --simplify-by-decoration --graph --pretty='format:%H%n' "$@" | \
+ 	git name-rev --stdin --name-only | \
+ 	less
+
+- make 'git push origin origin/branch' fail
+
+- git describe --all --contains
+  does not work on dirty non-branch HEAD?
+
+- git diff -b does not show correct indenting (well, it shows the _old_
+  indenting -- which is more correct?)
+- git diff should ignore empty lines when correlating context
+  see umts_rxtx:3598366f518009b19f6a0fa8232eb3991079af85
+  Note: solved by --patience
+- less does not ignore CRLF if color.diff = true
+- show diff -c for conflicting sym/git-links?
+- do not merge files and symlinks?
+- actually generate a merged file for CONFLICT (rename/rename)
+
+The following http-related items will be somewhat obsoleted by http smart
+transport. (If CGI is not available, the old transport is still useful.)
+
+open questions:
+ + ok_to_give_up: THEY_HAVE != COMMON (shallow commits?)
+ + is it always true that: commit->parent->date < commit->date
+
+- fix ^C during git-http-fetch or git-http-push (leaves DAV locks locked)
+  o signal synchronization (ignore signals during remove_locks!)
+
+- fix "git stash --keep-index"
+
+=== done ===
+
+- "git diff / /" segfaults in gitdir
+
+- GIT_DIR, GIT_WORK_TREE
+
+  Directory ${GIT_WORK_TREE}xyz is interpreted as being in worktree, with
+  prefix xyz. If GIT_WORK_TREE is set, rev-parse --is-inside-work-tree fails.
+
+- disallow branch name "-" (synonym for @{-1})
+
+- fix patch ID performance for binary files
+
+- if remote (detached) HEAD points to a commit that is unreachable, we get
+
+ Initialized empty Git repository in /home/drizzd/tmp/git-test2/.git/
+ remote: Counting objects: 3, done.
+ remote: Total 3 (delta 0), reused 0 (delta 0)
+ Receiving objects: 100% (3/3), done.
+ error: Trying to write ref HEAD with nonexistant object
+ b8202335f514ec603aa4b263c3459f51aab8645a
+ fatal: Cannot update the ref 'HEAD'.
+
+ which is not very helpful. Should the HEAD sha1 be advertised at all?
+
+ Note: Looks like this is fixed. HEAD is now advertised by the pack transfer
+ protocol.
+
+- fix diff performance for large text files without function headers
+
+- overwrite untracked: init + merge, see http://mid.gmane.org/AANLkTimDnyzyV1FEEwEuxLfG1nSOcNa7Hzwt7DDssjba@mail.gmail.com
+  -> fixed
+
+- fix "git reset <file>" of unmerged index entry <file>
+  ! do_oneway_diff in diff-lib.c:552 (diff_unmerge)
+  -> fixed by junio in ff00b682
+
+- fix overwriting untracked symlinks
+
+- http://git.661346.n2.nabble.com/cherry-pick-fail-when-a-symbolic-link-has-been-changed-into-a-file-or-directory-td5705029.html#a5705029
+  -> apparently fixed
