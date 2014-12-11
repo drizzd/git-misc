@@ -10,6 +10,11 @@
 
 === new ===
 
+- inaccessible object due to permissions results in "corrupt object" warning
+  -> see fix-noatime-retry
+  -> need a test
+  -> not reproducible with recent git versions
+
 - making the current working directory invalid by remounting or moving
   directories.
 
